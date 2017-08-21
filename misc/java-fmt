@@ -1,0 +1,24 @@
+#!/bin/sh
+
+CURRENT_DIR=$(pwd)
+SETTING=$CURRENT_DIR/misc/airlift-codestyle.xml
+FORMATTER="/Applications/IntelliJ IDEA CE.app/Contents/bin/format.sh"
+
+exec 1>&2
+
+HOOK_MODE=1
+if [ "$1" = "-a" ]; then
+    HOOK_MODE=0
+fi
+
+# .java files to be committed
+if [ $HOOK_MODE -eq 1 ]; then
+    files=$(git status --short | grep -E '^[AM] .*\.java$'| cut -c4- | sed -e "s|^|$CURRENT_DIR/|")
+else
+    files=$(git status --short | grep -E '^[AM ][AM ] .*\.java$' | cut -c4- | sed -e "s|^|$CURRENT_DIR/|")
+fi
+
+echo "$files" | xargs "$FORMATTER" -s $SETTING
+if [ $HOOK_MODE -eq 1 ]; then
+    echo "$files" | xargs git add
+fi
