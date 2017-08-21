@@ -1,0 +1,11 @@
+.gradle
+.idea
+.ensime
+.ensime_cache.d/
+*.swp
+*~
+#*
+.#*
+build
+/log/*
+/serverRoot/
