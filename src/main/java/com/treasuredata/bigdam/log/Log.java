@@ -36,6 +36,13 @@ public class Log
     private static final String DEFAULT_DEBUG_TAG = "bigdam.log.debug";
     private static final String DEFAULT_TRACE_TAG = "bigdam.log.trace";
 
+    private static final int SENTRY_LEVEL_THRESHOLD_NEVER = 5;
+    private static final int SENTRY_LEVEL_THRESHOLD_ERROR = 4;
+    private static final int SENTRY_LEVEL_THRESHOLD_WARN = 3;
+    private static final int SENTRY_LEVEL_THRESHOLD_INFO = 2;
+    private static final int SENTRY_LEVEL_THRESHOLD_DEBUG = 1;
+    private static final int SENTRY_LEVEL_THRESHOLD_TRACE = 0;
+
     private static Function<Class<?>, Logger> loggerGetter = Log::defaultLoggerGetter;
 
     private static Map<String, ? extends Object> defaultAttributes = ImmutableMap.of();
@@ -44,6 +51,7 @@ public class Log
     private static int maskedValueLength = 8;
 
     private static SentryClient sentry = null;
+    private static int sentryLevel = SENTRY_LEVEL_THRESHOLD_NEVER;
 
     private static Fluency fluency = null;
 
@@ -94,6 +102,7 @@ public class Log
 
     public static void setup(
             final boolean enableSentry,
+            final String sentryLevelThreshold,
             final String dsn,
             final Optional<Float> sampleRate,
             final boolean enableFluentd,
@@ -102,7 +111,7 @@ public class Log
     )
     {
         setup(
-                enableSentry, dsn, sampleRate,
+                enableSentry, sentryLevelThreshold, dsn, sampleRate,
                 enableFluentd, host, port,
                 Log::defaultLoggerGetter,
                 Log::defaultSentryClientGetter,
@@ -112,6 +121,7 @@ public class Log
 
     public static void setup(
             final boolean enableSentry,
+            final String sentryLevelThreshold,
             final String dsn,
             final Optional<Float> sampleRate,
             final boolean enableFluentd,
@@ -124,7 +134,7 @@ public class Log
     {
         setupLogger(loggerGetter);
         if (enableSentry) {
-            setupSentry(sentryGetter, dsn, sampleRate);
+            setupSentry(sentryGetter, sentryLevelThreshold, dsn, sampleRate);
         }
         if (enableFluentd) {
             setupFluentd(fluencyGetter, host, port);
@@ -143,24 +153,48 @@ public class Log
         }
     }
 
-    public static void setupSentry(final String dsn, final Optional<Float> sampleRate)
+    public static void setupSentry(final String sentryLevelThreshold, final String dsn, final Optional<Float> sampleRate)
     {
-        setupSentry(Log::defaultSentryClientGetter, dsn, sampleRate);
+        setupSentry(Log::defaultSentryClientGetter, sentryLevelThreshold, dsn, sampleRate);
     }
 
-    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String dsn, final Optional<Float> sampleRate)
+    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn, final Optional<Float> sampleRate)
     {
         if (sampleRate.isPresent()) {
-            setupSentry(sentryGetterArg, String.format("%s?sample.rate=%f", dsn, sampleRate.get()));
+            setupSentry(sentryGetterArg, sentryLevelThreshold, String.format("%s?sample.rate=%f", dsn, sampleRate.get()));
         }
         else {
-            setupSentry(sentryGetterArg, dsn);
+            setupSentry(sentryGetterArg, sentryLevelThreshold, dsn);
         }
     }
 
-    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String dsn)
+    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn)
     {
+        if (sentryLevelThreshold == null) {
+            throw new IllegalArgumentException("Sentry log level is not specified.");
+        }
+
         Sentry.init(dsn);
+
+        // "+ 1" is to be bigger than threshold
+        if (sentryLevelThreshold.equals("error")) {
+            sentryLevel = SENTRY_LEVEL_THRESHOLD_ERROR + 1;
+        }
+        else if (sentryLevelThreshold.equals("warn")) {
+            sentryLevel = SENTRY_LEVEL_THRESHOLD_WARN + 1;
+        }
+        else if (sentryLevelThreshold.equals("info")) {
+            sentryLevel = SENTRY_LEVEL_THRESHOLD_INFO + 1;
+        }
+        else if (sentryLevelThreshold.equals("debug")) {
+            sentryLevel = SENTRY_LEVEL_THRESHOLD_DEBUG + 1;
+        }
+        else if (sentryLevelThreshold.equals("trace")) {
+            sentryLevel = SENTRY_LEVEL_THRESHOLD_TRACE + 1;
+        }
+        else {
+            throw new IllegalArgumentException("Invalid log level for Sentry log level:" + sentryLevelThreshold);
+        }
         sentry = sentryGetterArg.get();
     }
 
@@ -227,18 +261,13 @@ public class Log
         this.logger = loggerGetter.apply(clazz);
     }
 
-    public void exception(final Throwable e)
+    protected void sendException(final Throwable e, Map<String, ? extends Object> attrs)
     {
-        exception(e, ImmutableMap.of());
-    }
-
-    public void exception(final Throwable e, final Map<String, ? extends Object> attrs)
-    {
-        logger.error(e.getMessage(), e);
-        error(String.format("%s:%s", e.getClass().getName(), e.getMessage()), attrs);
-
         if (sentry == null) {
             return;
+        }
+        if (attrs == null) {
+            attrs = ImmutableMap.of();
         }
 
         EventBuilder builder = new EventBuilder()
@@ -269,10 +298,16 @@ public class Log
         return EventTime.fromEpoch((int) now.getEpochSecond(), now.getNano());
     }
 
-    private Map<String, Object> buildEvent(final String messageKey, final String message, final Map<String, ? extends Object> attrs)
+    private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
         HashMap<String, Object> event = new HashMap<>();
-        event.put(messageKey, message);
+        if (messageKey != null) {
+            event.put(messageKey, message);
+        }
+        if (e != null) {
+            event.put("errorClass", e.getClass().getName());
+            event.put("error", e.getMessage());
+        }
         event.putAll(defaultAttributes);
         for (Map.Entry<String, ? extends Object> pair : attrs.entrySet()) {
             String key = pair.getKey();
@@ -309,21 +344,36 @@ public class Log
         return event;
     }
 
-    protected void sendEvent(final String tag, final String message, final Map<String, ? extends Object> attrs)
+    protected void sendEvent(final String tag, final Map<String, ? extends Object> attrs)
     {
-        sendEvent(tag, Instant.now(), "message", message, (attrs == null ? ImmutableMap.of() : attrs));
+        sendEvent(tag, Instant.now(), null, null, null, attrs);
     }
 
-    protected void sendEvent(final String tag, final Instant now, final String messageKey, final String message, final Map<String, ? extends Object> attrs)
+    protected void sendEvent(final String tag, final Instant now, final Map<String, ? extends Object> attrs)
+    {
+        sendEvent(tag, now, null, null, null, attrs);
+    }
+
+    protected void sendEvent(final String tag, final String message, final Map<String, ? extends Object> attrs)
+    {
+        sendEvent(tag, Instant.now(), "message", message, null, (attrs == null ? ImmutableMap.of() : attrs));
+    }
+
+    protected void sendEvent(final String tag, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        sendEvent(tag, Instant.now(), "message", message, e, (attrs == null ? ImmutableMap.of() : attrs));
+    }
+
+    protected void sendEvent(final String tag, final Instant now, final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
         if (fluency == null) {
             return;
         }
         try {
-            fluency.emit(tag, eventTime(now), buildEvent(messageKey, message, attrs));
+            fluency.emit(tag, eventTime(now), buildEvent(messageKey, message, e, attrs));
         }
-        catch (IOException e) {
-            logger.error("Failed to emit event to Fluentd", e);
+        catch (IOException ex) {
+            logger.error("Failed to emit event to Fluentd", ex);
         }
     }
 
@@ -339,6 +389,20 @@ public class Log
         sendEvent(errorTag, message, attrs);
     }
 
+    public void error(final String message, final Throwable e)
+    {
+        error(message, e, null);
+    }
+
+    public void error(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        logger.error(message, e);
+        sendEvent(errorTag, message, e, attrs);
+        if (sentryLevel > SENTRY_LEVEL_THRESHOLD_ERROR) {
+            sendException(e, attrs);
+        }
+    }
+
     public void warn(final String message)
     {
         logger.warn(message);
@@ -349,6 +413,20 @@ public class Log
     {
         logger.warn(message);
         sendEvent(warnTag, message, attrs);
+    }
+
+    public void warn(final String message, final Throwable e)
+    {
+        warn(message, e, null);
+    }
+
+    public void warn(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        logger.warn(message, e);
+        sendEvent(warnTag, message, e, attrs);
+        if (sentryLevel > SENTRY_LEVEL_THRESHOLD_WARN) {
+            sendException(e, attrs);
+        }
     }
 
     public void info(final String message)
@@ -363,6 +441,20 @@ public class Log
         sendEvent(infoTag, message, attrs);
     }
 
+    public void info(final String message, final Throwable e)
+    {
+        info(message, e, null);
+    }
+
+    public void info(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        logger.info(message, e);
+        sendEvent(infoTag, message, e, attrs);
+        if (sentryLevel > SENTRY_LEVEL_THRESHOLD_INFO) {
+            sendException(e, attrs);
+        }
+    }
+
     public void debug(final String message)
     {
         logger.debug(message);
@@ -375,6 +467,20 @@ public class Log
         sendEvent(debugTag, message, attrs);
     }
 
+    public void debug(final String message, final Throwable e)
+    {
+        debug(message, e, null);
+    }
+
+    public void debug(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        logger.debug(message, e);
+        sendEvent(debugTag, message, e, attrs);
+        if (sentryLevel > SENTRY_LEVEL_THRESHOLD_DEBUG) {
+            sendException(e, attrs);
+        }
+    }
+
     public void trace(final String message)
     {
         logger.trace(message);
@@ -385,5 +491,19 @@ public class Log
     {
         logger.trace(message);
         sendEvent(traceTag, message, attrs);
+    }
+
+    public void trace(final String message, final Throwable e)
+    {
+        trace(message, e, null);
+    }
+
+    public void trace(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        logger.trace(message, e);
+        sendEvent(traceTag, message, e, attrs);
+        if (sentryLevel > SENTRY_LEVEL_THRESHOLD_TRACE) {
+            sendException(e, attrs);
+        }
     }
 }
