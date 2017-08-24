@@ -5,4 +5,11 @@ jdk:
   - openjdk8
 
 sudo: false
+
 dist: trusty # for OpenJDK8 support https://docs.travis-ci.com/user/languages/java/
+
+install:
+  - ./gradlew assemble -x signArchives -x uploadArchives -x closeAndReleaseRepository
+
+script:
+  - ./gradlew check --debug --stacktrace --info
