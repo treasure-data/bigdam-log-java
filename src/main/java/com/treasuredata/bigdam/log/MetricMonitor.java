@@ -103,12 +103,17 @@ public class MetricMonitor
 
     public void stop()
     {
+        stop(MONITOR_THREAD_STOP_TIMEOUT);
+    }
+
+    public void stop(final long stopTimeoutMsec)
+    {
         running.set(false);
         try {
-            monitorThread.join(MONITOR_THREAD_STOP_TIMEOUT);
+            monitorThread.join(stopTimeoutMsec);
             if (monitorThread.isAlive()) {
                 monitorThread.interrupt();
-                monitorThread.join(MONITOR_THREAD_STOP_TIMEOUT);
+                monitorThread.join(stopTimeoutMsec);
             }
         }
         catch (InterruptedException e) {
