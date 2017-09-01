@@ -41,7 +41,7 @@ public class MetricMonitor
     private long sleepIntervalMilliSeconds;
 
     private static final long SLEEP_INTERVAL_MSEC = 800L;
-    private static final long MONITOR_THREAD_STOP_TIMEOUT = 2000L; // sleep interva * 2 + alpha
+    private static final long MONITOR_THREAD_STOP_TIMEOUT = 2000L; // sleep interval * 2 + alpha
 
     public MetricMonitor(
             final Log logger,
