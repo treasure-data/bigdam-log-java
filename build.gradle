@@ -14,7 +14,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group = "com.treasuredata.bigdam"
 archivesBaseName = "log"
-version = "0.1.0"
+version = "0.2.0"
 description = "Logging library for Bigdam components"
 
 sourceCompatibility = 1.8
@@ -84,6 +84,7 @@ signing {
     sign configurations.archives
 }
 
+// ./gradlew uploadArchives -Prelease
 uploadArchives {
     repositories {
         if (isDevBuild) {
@@ -96,6 +97,7 @@ uploadArchives {
                 }
 
                 repository(url: sonatypeRepositoryUrl) {
+                    // configure them in ~/.gradle/gradle.properties
                     authentication(userName: sonatypeUsername, password: sonatypePassword)
                 }
 
@@ -127,10 +129,4 @@ uploadArchives {
             }
         }
     }
-}
-
-// ./gradlew closeAndReleaseRepository
-nexusStaging {
-    packageGroup = "com.treasuredata.bigdam" //optional if packageGroup == project.getGroup()
-    stagingProfileId = "tagomoris"
 }
