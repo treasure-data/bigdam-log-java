@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -298,17 +300,13 @@ public class Log
         return EventTime.fromEpoch((int) now.getEpochSecond(), now.getNano());
     }
 
-    private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    private Map<String, Object> filterAttrs(final Map<String, ? extends Object> attrs)
     {
+        if (attrs == null) {
+            return ImmutableMap.of();
+        }
+
         HashMap<String, Object> event = new HashMap<>();
-        if (messageKey != null) {
-            event.put(messageKey, message);
-        }
-        if (e != null) {
-            event.put("errorClass", e.getClass().getName());
-            event.put("error", e.getMessage());
-        }
-        event.putAll(defaultAttributes);
         for (Map.Entry<String, ? extends Object> pair : attrs.entrySet()) {
             String key = pair.getKey();
             Object value = pair.getValue();
@@ -341,6 +339,21 @@ public class Log
                 }
             }
         }
+        return event;
+    }
+
+    private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        HashMap<String, Object> event = new HashMap<>();
+        if (messageKey != null) {
+            event.put(messageKey, message);
+        }
+        if (e != null) {
+            event.put("errorClass", e.getClass().getName());
+            event.put("error", e.getMessage());
+        }
+        event.putAll(defaultAttributes);
+        event.putAll(filterAttrs(attrs));
         return event;
     }
 
@@ -385,7 +398,7 @@ public class Log
 
     public void error(final String message, final Map<String, ? extends Object> attrs)
     {
-        logger.error(message);
+        logger.error(message + " {}", filterAttrs(attrs));
         sendEvent(errorTag, message, attrs);
     }
 
@@ -396,7 +409,12 @@ public class Log
 
     public void error(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        logger.error(message, e);
+        if (attrs == null) {
+            logger.error(message, e);
+        }
+        else {
+            logger.error(message + " {}", filterAttrs(attrs), e);
+        }
         sendEvent(errorTag, message, e, attrs);
         if (sentryLevel > SENTRY_LEVEL_THRESHOLD_ERROR) {
             sendException(e, attrs);
@@ -411,7 +429,7 @@ public class Log
 
     public void warn(final String message, final Map<String, ? extends Object> attrs)
     {
-        logger.warn(message);
+        logger.warn(message + " {}", filterAttrs(attrs));
         sendEvent(warnTag, message, attrs);
     }
 
@@ -422,7 +440,12 @@ public class Log
 
     public void warn(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        logger.warn(message, e);
+        if (attrs == null) {
+            logger.warn(message, e);
+        }
+        else {
+            logger.warn(message + " {}", filterAttrs(attrs), e);
+        }
         sendEvent(warnTag, message, e, attrs);
         if (sentryLevel > SENTRY_LEVEL_THRESHOLD_WARN) {
             sendException(e, attrs);
@@ -437,7 +460,7 @@ public class Log
 
     public void info(final String message, final Map<String, ? extends Object> attrs)
     {
-        logger.info(message);
+        logger.info(message + " {}", filterAttrs(attrs));
         sendEvent(infoTag, message, attrs);
     }
 
@@ -448,7 +471,12 @@ public class Log
 
     public void info(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        logger.info(message, e);
+        if (attrs == null) {
+            logger.info(message, e);
+        }
+        else {
+            logger.info(message + " {}", filterAttrs(attrs), e);
+        }
         sendEvent(infoTag, message, e, attrs);
         if (sentryLevel > SENTRY_LEVEL_THRESHOLD_INFO) {
             sendException(e, attrs);
@@ -463,7 +491,7 @@ public class Log
 
     public void debug(final String message, final Map<String, ? extends Object> attrs)
     {
-        logger.debug(message);
+        logger.debug(message + " {}", filterAttrs(attrs));
         sendEvent(debugTag, message, attrs);
     }
 
@@ -474,7 +502,12 @@ public class Log
 
     public void debug(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        logger.debug(message, e);
+        if (attrs == null) {
+            logger.debug(message, e);
+        }
+        else {
+            logger.debug(message + " {}", filterAttrs(attrs), e);
+        }
         sendEvent(debugTag, message, e, attrs);
         if (sentryLevel > SENTRY_LEVEL_THRESHOLD_DEBUG) {
             sendException(e, attrs);
@@ -489,7 +522,7 @@ public class Log
 
     public void trace(final String message, final Map<String, ? extends Object> attrs)
     {
-        logger.trace(message);
+        logger.trace(message + " {}", filterAttrs(attrs));
         sendEvent(traceTag, message, attrs);
     }
 
@@ -500,7 +533,12 @@ public class Log
 
     public void trace(final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        logger.trace(message, e);
+        if (attrs == null) {
+            logger.trace(message, e);
+        }
+        else {
+            logger.trace(message + " {}", filterAttrs(attrs), e);
+        }
         sendEvent(traceTag, message, e, attrs);
         if (sentryLevel > SENTRY_LEVEL_THRESHOLD_TRACE) {
             sendException(e, attrs);
