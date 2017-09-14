@@ -344,6 +344,9 @@ public class Log
 
     private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
+        // buildEvent doesn't modify "attrs", but construct another Map object.
+        // Original attrs is used for many purposes (dump it on local log, send it to Fluentd and/or Sentry),
+        // so we should not modify it.
         Map<String, Object> event = new HashMap<>();
         if (messageKey != null) {
             event.put(messageKey, message);
