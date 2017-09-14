@@ -306,7 +306,7 @@ public class Log
             return ImmutableMap.of();
         }
 
-        HashMap<String, Object> event = new HashMap<>();
+        Map<String, Object> event = new HashMap<>();
         for (Map.Entry<String, ? extends Object> pair : attrs.entrySet()) {
             String key = pair.getKey();
             Object value = pair.getValue();
@@ -344,7 +344,7 @@ public class Log
 
     private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
     {
-        HashMap<String, Object> event = new HashMap<>();
+        Map<String, Object> event = new HashMap<>();
         if (messageKey != null) {
             event.put(messageKey, message);
         }
