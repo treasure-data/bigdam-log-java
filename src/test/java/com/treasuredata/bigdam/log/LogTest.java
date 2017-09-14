@@ -40,7 +40,7 @@ public class LogTest
         Log.setup(false, null, null, null, false, null, 0, clazz -> underlying, () -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
-        log.error("message", ImmutableMap.of());
+        log.error("message");
         verify(underlying).error("message");
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
         verify(fluency, never()).emit(any(), any(), any());
@@ -83,11 +83,11 @@ public class LogTest
         Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
-        log.error("message 1", ImmutableMap.of());
-        log.warn("message 2", ImmutableMap.of());
-        log.info("message 3", ImmutableMap.of());
-        log.debug("message 4", ImmutableMap.of());
-        log.trace("message 5", ImmutableMap.of());
+        log.error("message 1");
+        log.warn("message 2");
+        log.info("message 3");
+        log.debug("message 4");
+        log.trace("message 5");
         verify(underlying).error("message 1");
         verify(underlying).warn("message 2");
         verify(underlying).info("message 3");
@@ -112,10 +112,11 @@ public class LogTest
         Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
-        log.error("message", ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2"));
-        verify(underlying).error("message");
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message", "k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2")));
+        Map<String, Object> attrs = ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2");
+        log.error("message", attrs);
 
+        verify(underlying).error("message {}", attrs);
+        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message", "k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2")));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -130,7 +131,7 @@ public class LogTest
         Log.setDefaultAttributes(ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris"));
         Log log = new Log(LogTest.class);
 
-        log.error("message", ImmutableMap.of());
+        log.error("message");
         verify(underlying).error("message");
         verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message", "mykey", "myvalue", "myname", "tagomoris")));
 
@@ -157,9 +158,8 @@ public class LogTest
                 .putAll(defaults)
                 .build();
 
-        verify(underlying).error("message");
+        verify(underlying).error("message {}", attrs);
         verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
-
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -195,7 +195,7 @@ public class LogTest
         Log.setDefaultAttributes(defaults);
         Log log = new Log(LogTest.class);
 
-        Instant t = Instant.now();
+        Instant t = Instant.ofEpochSecond(1505367350L); // 2017-09-14 05:35:50 UTC
         JustPojo p1 = new JustPojo("p1", true, 1);
         JustPojo p2 = new JustPojo("p2", false, null);
 
@@ -206,17 +206,18 @@ public class LogTest
         attrs.put("n", null);
         log.error("message", attrs);
 
+        Map<String, Object> expectedAttrs = new HashMap<>();
+        expectedAttrs.put("t", t.toString());
+        expectedAttrs.put("p1", "JustPojo{p1,true,1}");
+        expectedAttrs.put("p2", "JustPojo{p2,false,null}");
+        expectedAttrs.put("n", null);
         Map<String, Object> expected = new HashMap<>();
         expected.put("message", "message");
-        expected.put("t", t.toString());
-        expected.put("p1", "JustPojo{p1,true,1}");
-        expected.put("p2", "JustPojo{p2,false,null}");
-        expected.put("n", null);
+        expected.putAll(expectedAttrs);
         expected.putAll(defaults);
 
-        verify(underlying).error("message");
+        verify(underlying).error(eq("message {}"), eq(expectedAttrs));
         verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
-
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -232,7 +233,7 @@ public class LogTest
         Log log = new Log(LogTest.class);
 
         log.error("message", ImmutableMap.of());
-        verify(underlying).error("message");
+        verify(underlying).error(eq("message {}"), eq(ImmutableMap.of()));
         verify(fluency).emit(eq("bigdam.test.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message")));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
@@ -255,16 +256,16 @@ public class LogTest
         Map<String, Object> attrs = ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2");
         log.error("message", attrs);
 
+        Map<String, Object> expectedAttrs = ImmutableMap.of("k", "vvvv");
         Map<String, Object> expected = ImmutableMap.<String, Object>builder()
                 .put("message", "message")
                 .put("mykey", "myvalue")
                 .put("myname", "tagomoris")
-                .put("k", "vvvv")
+                .putAll(expectedAttrs)
                 .build();
 
-        verify(underlying).error("message");
+        verify(underlying).error(eq("message {}"), eq(expectedAttrs));
         verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
-
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 }
