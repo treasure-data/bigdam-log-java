@@ -23,6 +23,9 @@ import org.komamitsu.fluency.Fluency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.Level;
+
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
 import io.sentry.SentryClientFactory;
@@ -57,6 +60,8 @@ public class Log
 
     private static Fluency fluency = null;
 
+    private static Level level = Level.INFO;
+
     private static String errorTag = DEFAULT_ERROR_TAG;
     private static String warnTag = DEFAULT_WARN_TAG;
     private static String infoTag = DEFAULT_INFO_TAG;
@@ -65,6 +70,32 @@ public class Log
 
     private final Class<?> clazz;
     private Logger logger;
+
+    public enum LogLevel
+    {
+        TRACE, DEBUG, INFO, WARN, ERROR;
+    }
+
+    public static LogLevel getLevel(final String str)
+    {
+        String upcase = str.toUpperCase();
+        if (upcase.equals("ERROR")) {
+            return LogLevel.ERROR;
+        }
+        if (upcase.equals("WARN")) {
+            return LogLevel.WARN;
+        }
+        if (upcase.equals("INFO")) {
+            return LogLevel.INFO;
+        }
+        if (upcase.equals("DEBUG")) {
+            return LogLevel.DEBUG;
+        }
+        if (upcase.equals("TRACE")) {
+            return LogLevel.TRACE;
+        }
+        return null;
+    }
 
     public static Logger defaultLoggerGetter(final Class<?> clazz)
     {
@@ -91,6 +122,7 @@ public class Log
     {
         sentry = null;
         fluency = null;
+        level = Level.INFO;
         errorTag = DEFAULT_ERROR_TAG;
         warnTag = DEFAULT_WARN_TAG;
         infoTag = DEFAULT_INFO_TAG;
@@ -214,6 +246,29 @@ public class Log
         fluency = fluencyGetterArg.apply(host, port);
     }
 
+    public static void setLogLevel(final LogLevel newLevel)
+    {
+        switch (newLevel) {
+            case ERROR:
+                level = Level.ERROR;
+                break;
+            case WARN:
+                level = Level.WARN;
+                break;
+            case INFO:
+                level = Level.INFO;
+                break;
+            case DEBUG:
+                level = Level.DEBUG;
+                break;
+            case TRACE:
+                level = Level.TRACE;
+                break;
+            default:
+                throw new RuntimeException("BUG: Unknown LogLevel:" + newLevel);
+        }
+    }
+
     public static void setDefaultAttributes(final Map<String, ? extends Object> defaultAttributesArg)
     {
         // all default attributes must be serializable as msgpack
@@ -261,6 +316,16 @@ public class Log
     {
         this.clazz = clazz;
         this.logger = loggerGetter.apply(clazz);
+        if (logger instanceof ch.qos.logback.classic.Logger) {
+            ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) logger;
+            log.setLevel(level);
+        }
+    }
+
+    // only for testing
+    Logger getUnderlying()
+    {
+        return logger;
     }
 
     protected void sendException(final Throwable e, Map<String, ? extends Object> attrs)
