@@ -14,6 +14,10 @@ import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
 import org.slf4j.Logger;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.Appender;
+
 import org.junit.After;
 import org.junit.Test;
 
@@ -21,6 +25,9 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 
 public class LogTest
 {
@@ -44,6 +51,98 @@ public class LogTest
         verify(underlying).error("message");
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
         verify(fluency, never()).emit(any(), any(), any());
+    }
+
+    // TODO: data driven test for log levels of set / actual
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void setLogLevelWarnAndPutWarn()
+            throws Exception
+    {
+        SentryClient sentry = mock(SentryClient.class);
+        Fluency fluency = mock(Fluency.class);
+        Log.setup(false, null, null, null, false, null, 0);
+        Log.setLogLevel(Log.LogLevel.WARN);
+        Log log = new Log(LogTest.class);
+        ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
+
+        Appender mockAppender = mock(Appender.class);
+        underlying.addAppender(mockAppender);
+
+        log.warn("yay", ImmutableMap.of("k", "v"));
+
+        ArgumentCaptor<LoggingEvent> captorLoggingEvent = ArgumentCaptor.forClass(LoggingEvent.class);
+
+        verify(mockAppender).doAppend(captorLoggingEvent.capture());
+        LoggingEvent loggingEvent = captorLoggingEvent.getValue();
+        assertThat(loggingEvent.getLevel(), is(Level.WARN));
+        assertThat(loggingEvent.getFormattedMessage(), is("yay {k=v}"));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void setLogLevelWarnAndPutInfo()
+            throws Exception
+    {
+        SentryClient sentry = mock(SentryClient.class);
+        Fluency fluency = mock(Fluency.class);
+        Log.setup(false, null, null, null, false, null, 0);
+        Log.setLogLevel(Log.LogLevel.WARN);
+        Log log = new Log(LogTest.class);
+        ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
+
+        Appender mockAppender = mock(Appender.class);
+        underlying.addAppender(mockAppender);
+
+        log.info("yay", ImmutableMap.of("k", "v"));
+
+        verify(mockAppender, never()).doAppend(any());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void setLogLevelDebugAndPutTrace()
+            throws Exception
+    {
+        SentryClient sentry = mock(SentryClient.class);
+        Fluency fluency = mock(Fluency.class);
+        Log.setup(false, null, null, null, false, null, 0);
+        Log.setLogLevel(Log.LogLevel.DEBUG);
+        Log log = new Log(LogTest.class);
+        ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
+
+        Appender mockAppender = mock(Appender.class);
+        underlying.addAppender(mockAppender);
+
+        log.trace("yay", ImmutableMap.of("k", "v"));
+
+        verify(mockAppender, never()).doAppend(any());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void setLogLevelTraceAndPutTrace()
+            throws Exception
+    {
+        SentryClient sentry = mock(SentryClient.class);
+        Fluency fluency = mock(Fluency.class);
+        Log.setup(false, null, null, null, false, null, 0);
+        Log.setLogLevel(Log.LogLevel.TRACE);
+        Log log = new Log(LogTest.class);
+        ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
+
+        Appender mockAppender = mock(Appender.class);
+        underlying.addAppender(mockAppender);
+
+        log.trace("yay", ImmutableMap.of("k", "v"));
+
+        ArgumentCaptor<LoggingEvent> captorLoggingEvent = ArgumentCaptor.forClass(LoggingEvent.class);
+
+        verify(mockAppender).doAppend(captorLoggingEvent.capture());
+        LoggingEvent loggingEvent = captorLoggingEvent.getValue();
+        assertThat(loggingEvent.getLevel(), is(Level.TRACE));
+        assertThat(loggingEvent.getFormattedMessage(), is("yay {k=v}"));
     }
 
     @Test
