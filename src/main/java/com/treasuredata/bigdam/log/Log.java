@@ -71,28 +71,23 @@ public class Log
     private final Class<?> clazz;
     private Logger logger;
 
-    public enum LogLevel
-    {
-        TRACE, DEBUG, INFO, WARN, ERROR;
-    }
-
-    public static LogLevel getLevel(final String str)
+    public static Level getLevel(final String str)
     {
         String upcase = str.toUpperCase();
         if (upcase.equals("ERROR")) {
-            return LogLevel.ERROR;
+            return Level.ERROR;
         }
         if (upcase.equals("WARN")) {
-            return LogLevel.WARN;
+            return Level.WARN;
         }
         if (upcase.equals("INFO")) {
-            return LogLevel.INFO;
+            return Level.INFO;
         }
         if (upcase.equals("DEBUG")) {
-            return LogLevel.DEBUG;
+            return Level.DEBUG;
         }
         if (upcase.equals("TRACE")) {
-            return LogLevel.TRACE;
+            return Level.TRACE;
         }
         return null;
     }
@@ -246,27 +241,13 @@ public class Log
         fluency = fluencyGetterArg.apply(host, port);
     }
 
-    public static void setLogLevel(final LogLevel newLevel)
+    public static void setLogLevel(final String newLevel)
     {
-        switch (newLevel) {
-            case ERROR:
-                level = Level.ERROR;
-                break;
-            case WARN:
-                level = Level.WARN;
-                break;
-            case INFO:
-                level = Level.INFO;
-                break;
-            case DEBUG:
-                level = Level.DEBUG;
-                break;
-            case TRACE:
-                level = Level.TRACE;
-                break;
-            default:
-                throw new RuntimeException("BUG: Unknown LogLevel:" + newLevel);
+        Level newer = getLevel(newLevel);
+        if (newer == null) {
+            throw new IllegalArgumentException("BUG: Unknown LogLevel:" + newLevel);
         }
+        level = newer;
     }
 
     public static void setDefaultAttributes(final Map<String, ? extends Object> defaultAttributesArg)
