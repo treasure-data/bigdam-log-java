@@ -63,7 +63,7 @@ public class LogTest
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
         Log.setup(false, null, null, null, false, null, 0);
-        Log.setLogLevel(Log.LogLevel.WARN);
+        Log.setLogLevel("warn");
         Log log = new Log(LogTest.class);
         ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
 
@@ -88,7 +88,7 @@ public class LogTest
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
         Log.setup(false, null, null, null, false, null, 0);
-        Log.setLogLevel(Log.LogLevel.WARN);
+        Log.setLogLevel("warn");
         Log log = new Log(LogTest.class);
         ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
 
@@ -108,7 +108,7 @@ public class LogTest
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
         Log.setup(false, null, null, null, false, null, 0);
-        Log.setLogLevel(Log.LogLevel.DEBUG);
+        Log.setLogLevel("DEBUG");
         Log log = new Log(LogTest.class);
         ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
 
@@ -128,7 +128,7 @@ public class LogTest
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
         Log.setup(false, null, null, null, false, null, 0);
-        Log.setLogLevel(Log.LogLevel.TRACE);
+        Log.setLogLevel("TRACE");
         Log log = new Log(LogTest.class);
         ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
 
