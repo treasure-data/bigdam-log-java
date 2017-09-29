@@ -60,8 +60,6 @@ public class Log
 
     private static Fluency fluency = null;
 
-    private static Level level = Level.INFO;
-
     private static String errorTag = DEFAULT_ERROR_TAG;
     private static String warnTag = DEFAULT_WARN_TAG;
     private static String infoTag = DEFAULT_INFO_TAG;
@@ -117,7 +115,6 @@ public class Log
     {
         sentry = null;
         fluency = null;
-        level = Level.INFO;
         errorTag = DEFAULT_ERROR_TAG;
         warnTag = DEFAULT_WARN_TAG;
         infoTag = DEFAULT_INFO_TAG;
@@ -247,7 +244,10 @@ public class Log
         if (newer == null) {
             throw new IllegalArgumentException("BUG: Unknown LogLevel:" + newLevel);
         }
-        level = newer;
+        Logger root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        if (root instanceof ch.qos.logback.classic.Logger) {
+            ((ch.qos.logback.classic.Logger) root).setLevel(newer);
+        }
     }
 
     public static void setDefaultAttributes(final Map<String, ? extends Object> defaultAttributesArg)
@@ -297,10 +297,6 @@ public class Log
     {
         this.clazz = clazz;
         this.logger = loggerGetter.apply(clazz);
-        if (logger instanceof ch.qos.logback.classic.Logger) {
-            ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) logger;
-            log.setLevel(level);
-        }
     }
 
     // only for testing
