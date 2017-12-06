@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
 import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
 import org.slf4j.Logger;
@@ -286,6 +287,9 @@ public class Log
             catch (IOException e) {
                 // ignore it - this process is going down.
             }
+        }
+        if (sentry != null) {
+            sentry.closeConnection();
         }
     }
 
