@@ -23,9 +23,10 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isNot;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 import static org.mockito.Mockito.*;
 
 import org.mockito.ArgumentCaptor;
@@ -184,8 +185,8 @@ public class LogTest
             throws Exception
     {
         String dsn = System.getenv("BIGDAM_LOG_TEST_SENTRY_DSN");
-        assumeThat(dsn, is(nonNullValue()));
-        assumeThat(dsn, isNot(""));
+        assumeThat(dsn, is(notNullValue()));
+        assumeThat(dsn, is(not("")));
         // if BIGDAM_LOG_TEST_SENTRY_DSN is not set, code below doesn't run
         Log.setup(true, "error", dsn, Optional.empty(), false, null, 24224);
         Log log = new Log(LogTest.class);
