@@ -44,7 +44,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, false, null, 0, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, false, null, 0, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         log.error("message");
@@ -152,7 +152,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(true, "error", "https://public:private@host:443/1", Optional.empty(), true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(true, "error", "https://public:private@host:443/1", Optional.empty(), true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         String message = "yaaaaaaaaaaay";
@@ -179,7 +179,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         log.error("message 1");
@@ -208,7 +208,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         Map<String, Object> attrs = ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2");
@@ -226,7 +226,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log.setDefaultAttributes(ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris"));
         Log log = new Log(LogTest.class);
 
@@ -244,7 +244,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log log = new Log(LogTest.class);
@@ -289,7 +289,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log log = new Log(LogTest.class);
@@ -327,7 +327,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log.setTagPrefix("bigdam.test.log.");
         Log log = new Log(LogTest.class);
 
@@ -345,7 +345,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log.setAttributeKeysHidden(ImmutableList.of("k1", "k2"));
