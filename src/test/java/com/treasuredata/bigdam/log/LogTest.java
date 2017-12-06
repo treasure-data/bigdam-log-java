@@ -23,6 +23,8 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isNot;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -170,6 +172,33 @@ public class LogTest
         verify(underlying).error("yay", e);
         verify(sentry, times(1)).sendEvent(any(EventBuilder.class));
         verify(fluency, times(1)).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "yay", "errorClass", "java.lang.RuntimeException", "error", message)));
+    }
+
+    private void throwExceptionForTest()
+    {
+        throw new RuntimeException(String.format("This is an exception thrown by unit tests: %d", System.nanoTime()));
+    }
+
+    @Test
+    public void sendErrorToSentryActuallOnlyWhenConfigured()
+            throws Exception
+    {
+        String dsn = System.getenv("BIGDAM_LOG_TEST_SENTRY_DSN");
+        assumeThat(dsn, is(nonNullValue()));
+        assumeThat(dsn, isNot(""));
+        // if BIGDAM_LOG_TEST_SENTRY_DSN is not set, code below doesn't run
+        Log.setup(true, "error", dsn, Optional.empty(), false, null, 24224);
+        Log log = new Log(LogTest.class);
+        try {
+            throwExceptionForTest();
+            assertThat(true, is(false));
+        }
+        catch (Throwable e) {
+            log.error("Events from unit test", e, Attrs.of("key", "value"));
+            assertThat(true, is(true));
+        }
+        Log.close();
+        assertThat(true, is(true));
     }
 
     @Test
