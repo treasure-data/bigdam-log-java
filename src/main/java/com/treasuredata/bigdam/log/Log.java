@@ -16,8 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
-
 import org.komamitsu.fluency.EventTime;
 import org.komamitsu.fluency.Fluency;
 import org.slf4j.Logger;
@@ -95,9 +93,9 @@ public class Log
         return LoggerFactory.getLogger(clazz);
     }
 
-    public static SentryClient defaultSentryClientGetter()
+    public static SentryClient defaultSentryClientGetter(final String dsn)
     {
-        return SentryClientFactory.sentryClient();
+        return Sentry.init(dsn);
     }
 
     public static Fluency defaultFluencyGetter(final String host, final int port)
@@ -154,7 +152,7 @@ public class Log
             final String host,
             final int port,
             final Function<Class<?>, Logger> loggerGetter,
-            final Supplier<SentryClient> sentryGetter,
+            final Function<String, SentryClient> sentryGetter,
             final BiFunction<String, Integer, Fluency> fluencyGetter
     )
     {
@@ -184,7 +182,7 @@ public class Log
         setupSentry(Log::defaultSentryClientGetter, sentryLevelThreshold, dsn, sampleRate);
     }
 
-    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn, final Optional<Float> sampleRate)
+    public static void setupSentry(final Function<String, SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn, final Optional<Float> sampleRate)
     {
         if (sampleRate.isPresent()) {
             setupSentry(sentryGetterArg, sentryLevelThreshold, String.format("%s?sample.rate=%f", dsn, sampleRate.get()));
@@ -194,13 +192,11 @@ public class Log
         }
     }
 
-    public static void setupSentry(final Supplier<SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn)
+    public static void setupSentry(final Function<String, SentryClient> sentryGetterArg, final String sentryLevelThreshold, final String dsn)
     {
         if (sentryLevelThreshold == null) {
             throw new IllegalArgumentException("Sentry log level is not specified.");
         }
-
-        Sentry.init(dsn);
 
         // "+ 1" is to be bigger than threshold
         if (sentryLevelThreshold.equals("error")) {
@@ -221,7 +217,7 @@ public class Log
         else {
             throw new IllegalArgumentException("Invalid log level for Sentry log level:" + sentryLevelThreshold);
         }
-        sentry = sentryGetterArg.get();
+        sentry = sentryGetterArg.apply(dsn);
     }
 
     public static void setupFluentd(final String host, final int port)
