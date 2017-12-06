@@ -23,7 +23,10 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 import static org.mockito.Mockito.*;
 
 import org.mockito.ArgumentCaptor;
@@ -44,7 +47,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, false, null, 0, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, false, null, 0, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         log.error("message");
@@ -152,7 +155,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(true, "error", "https://public:private@host:443/1", Optional.empty(), true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(true, "error", "https://public:private@host:443/1", Optional.empty(), true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         String message = "yaaaaaaaaaaay";
@@ -172,6 +175,33 @@ public class LogTest
         verify(fluency, times(1)).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "yay", "errorClass", "java.lang.RuntimeException", "error", message)));
     }
 
+    private void throwExceptionForTest()
+    {
+        throw new RuntimeException(String.format("This is an exception thrown by unit tests: %d", System.nanoTime()));
+    }
+
+    @Test
+    public void sendErrorToSentryActuallOnlyWhenConfigured()
+            throws Exception
+    {
+        String dsn = System.getenv("BIGDAM_LOG_TEST_SENTRY_DSN");
+        assumeThat(dsn, is(notNullValue()));
+        assumeThat(dsn, is(not("")));
+        // if BIGDAM_LOG_TEST_SENTRY_DSN is not set, code below doesn't run
+        Log.setup(true, "error", dsn, Optional.empty(), false, null, 24224);
+        Log log = new Log(LogTest.class);
+        try {
+            throwExceptionForTest();
+            assertThat(true, is(false));
+        }
+        catch (Throwable e) {
+            log.error("Events from unit test", e, Attrs.of("key", "value"));
+            assertThat(true, is(true));
+        }
+        Log.close();
+        assertThat(true, is(true));
+    }
+
     @Test
     public void initLoggerWithFluency()
             throws Exception
@@ -179,7 +209,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         log.error("message 1");
@@ -208,7 +238,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log log = new Log(LogTest.class);
 
         Map<String, Object> attrs = ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2");
@@ -226,7 +256,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log.setDefaultAttributes(ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris"));
         Log log = new Log(LogTest.class);
 
@@ -244,7 +274,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log log = new Log(LogTest.class);
@@ -289,7 +319,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log log = new Log(LogTest.class);
@@ -327,7 +357,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Log.setTagPrefix("bigdam.test.log.");
         Log log = new Log(LogTest.class);
 
@@ -345,7 +375,7 @@ public class LogTest
         Logger underlying = mock(Logger.class);
         SentryClient sentry = mock(SentryClient.class);
         Fluency fluency = mock(Fluency.class);
-        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, () -> sentry, (s, i) -> fluency);
+        Log.setup(false, null, null, null, true, "localhost", 24224, clazz -> underlying, (s) -> sentry, (s, i) -> fluency);
         Map<String, Object> defaults = ImmutableMap.of("mykey", "myvalue", "myname", "tagomoris");
         Log.setDefaultAttributes(defaults);
         Log.setAttributeKeysHidden(ImmutableList.of("k1", "k2"));
