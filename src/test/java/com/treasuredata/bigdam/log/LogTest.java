@@ -30,7 +30,6 @@ import static org.junit.Assume.*;
 import static org.mockito.Mockito.*;
 
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 
 public class LogTest
 {
@@ -165,14 +164,21 @@ public class LogTest
         }
         catch (Exception ex) {
             e = ex;
-            log.error("yay", ex);
+            log.error("yay", ex, Attrs.of("key", "value", "nullKey", null));
         }
 
         assertThat(e, is(instanceOf(RuntimeException.class)));
         assertThat(e.getMessage(), is(message));
-        verify(underlying).error("yay", e);
+        verify(underlying).error(eq("yay {}"), eq(Attrs.of("key", "value", "nullKey", null)), eq(e));
         verify(sentry, times(1)).sendEvent(any(EventBuilder.class));
-        verify(fluency, times(1)).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "yay", "errorClass", "java.lang.RuntimeException", "error", message)));
+        verify(fluency, times(1)).emit(eq("bigdam.log.error"),
+                any(EventTime.class),
+                eq(Attrs.of(
+                        "message", "yay",
+                        "errorClass", "java.lang.RuntimeException",
+                        "error", message,
+                        "key", "value",
+                        "nullKey", null)));
     }
 
     private void throwExceptionForTest()

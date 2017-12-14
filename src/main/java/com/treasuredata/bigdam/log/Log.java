@@ -323,14 +323,15 @@ public class Log
         }
         for (Map.Entry<String, ? extends Object> pair : attrs.entrySet()) {
             String key = pair.getKey();
+            Object value = pair.getValue();
             if (attributeKeysHidden.contains(key)) {
                 // ignore
             }
             else if (attributeKeysMasked.contains(key)) {
-                builder.withExtra(key, pair.getValue().toString().substring(0, maskedValueLength));
+                builder.withExtra(key, value == null ? null : value.toString().substring(0, maskedValueLength));
             }
             else {
-                builder.withExtra(key, pair.getValue().toString());
+                builder.withExtra(key, value == null ? null : value.toString());
             }
         }
         builder.withSentryInterface(new ExceptionInterface(e));
