@@ -247,6 +247,18 @@ public class Log
         }
     }
 
+    public static void setLogLevel(final String packageName, final String newLevel)
+    {
+        Level newer = getLevel(newLevel);
+        if (newer == null) {
+            throw new IllegalArgumentException("BUG: Unknown LogLevel:" + newLevel);
+        }
+        Logger root = LoggerFactory.getLogger(packageName);
+        if (root instanceof ch.qos.logback.classic.Logger) {
+            ((ch.qos.logback.classic.Logger) root).setLevel(newer);
+        }
+    }
+
     public static void setDefaultAttributes(final Map<String, ? extends Object> defaultAttributesArg)
     {
         // all default attributes must be serializable as msgpack
