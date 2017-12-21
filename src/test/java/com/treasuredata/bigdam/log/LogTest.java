@@ -147,6 +147,27 @@ public class LogTest
         assertThat(loggingEvent.getFormattedMessage(), is("yay {k=v}"));
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void setLogLevelWithPackageName()
+            throws Exception
+    {
+        SentryClient sentry = mock(SentryClient.class);
+        Fluency fluency = mock(Fluency.class);
+        Log.setup(false, null, null, null, false, null, 0);
+        Log.setLogLevel("TRACE");
+        Log.setLogLevel("com.treasuredata.bigdam.log", "INFO");
+        Log log = new Log(LogTest.class);
+        ch.qos.logback.classic.Logger underlying = (ch.qos.logback.classic.Logger) log.getUnderlying();
+
+        Appender mockAppender = mock(Appender.class);
+        underlying.addAppender(mockAppender);
+
+        log.trace("yay", ImmutableMap.of("k", "v"));
+
+        verify(mockAppender, never()).doAppend(any());
+    }
+
     @Test
     public void initLoggerWithSentry()
             throws Exception
