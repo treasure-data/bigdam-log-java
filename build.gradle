@@ -14,7 +14,7 @@ apply plugin: 'io.codearte.nexus-staging'
 
 group = "com.treasuredata.bigdam"
 archivesBaseName = "log"
-version = "0.7.0"
+version = "0.8.0"
 description = "Logging library for Bigdam components"
 
 sourceCompatibility = 1.8
