@@ -168,6 +168,12 @@ public class LogTest
         verify(mockAppender, never()).doAppend(any());
     }
 
+    private long anyFluentdTimeStamp()
+    {
+        // return any(EventTime.class);
+        return any(Long.class);
+    }
+
     @Test
     public void initLoggerWithSentry()
             throws Exception
@@ -193,7 +199,7 @@ public class LogTest
         verify(underlying).error(eq("yay {}"), eq(Attrs.of("key", "value", "nullKey", null)), eq(e));
         verify(sentry, times(1)).sendEvent(any(EventBuilder.class));
         verify(fluency, times(1)).emit(eq("bigdam.log.error"),
-                any(EventTime.class),
+                anyFluentdTimeStamp(),
                 eq(Attrs.of(
                         "message", "yay",
                         "errorClass", "java.lang.RuntimeException",
@@ -249,11 +255,11 @@ public class LogTest
         verify(underlying).info("message 3");
         verify(underlying).debug("message 4");
         verify(underlying).trace("message 5");
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message 1")));
-        verify(fluency).emit(eq("bigdam.log.warn"), any(EventTime.class), eq(ImmutableMap.of("message", "message 2")));
-        verify(fluency).emit(eq("bigdam.log.info"), any(EventTime.class), eq(ImmutableMap.of("message", "message 3")));
-        verify(fluency).emit(eq("bigdam.log.debug"), any(EventTime.class), eq(ImmutableMap.of("message", "message 4")));
-        verify(fluency).emit(eq("bigdam.log.trace"), any(EventTime.class), eq(ImmutableMap.of("message", "message 5")));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 1")));
+        verify(fluency).emit(eq("bigdam.log.warn"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 2")));
+        verify(fluency).emit(eq("bigdam.log.info"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 3")));
+        verify(fluency).emit(eq("bigdam.log.debug"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 4")));
+        verify(fluency).emit(eq("bigdam.log.trace"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 5")));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
@@ -272,7 +278,7 @@ public class LogTest
         log.error("message", attrs);
 
         verify(underlying).error("message {}", attrs);
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message", "k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2")));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message", "k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2")));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -289,7 +295,7 @@ public class LogTest
 
         log.error("message");
         verify(underlying).error("message");
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message", "mykey", "myvalue", "myname", "tagomoris")));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message", "mykey", "myvalue", "myname", "tagomoris")));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
@@ -315,7 +321,7 @@ public class LogTest
                 .build();
 
         verify(underlying).error("message {}", attrs);
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(expected));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -373,7 +379,7 @@ public class LogTest
         expected.putAll(defaults);
 
         verify(underlying).error(eq("message {}"), eq(expectedAttrs));
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(expected));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -390,7 +396,7 @@ public class LogTest
 
         log.error("message", ImmutableMap.of());
         verify(underlying).error(eq("message {}"), eq(ImmutableMap.of()));
-        verify(fluency).emit(eq("bigdam.test.log.error"), any(EventTime.class), eq(ImmutableMap.of("message", "message")));
+        verify(fluency).emit(eq("bigdam.test.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message")));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
@@ -421,7 +427,7 @@ public class LogTest
                 .build();
 
         verify(underlying).error(eq("message {}"), eq(expectedAttrs));
-        verify(fluency).emit(eq("bigdam.log.error"), any(EventTime.class), eq(expected));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(expected));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 }
