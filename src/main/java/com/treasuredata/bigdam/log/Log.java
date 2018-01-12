@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,6 @@ import ch.qos.logback.classic.Level;
 
 import io.sentry.Sentry;
 import io.sentry.SentryClient;
-import io.sentry.SentryClientFactory;
 import io.sentry.event.Event;
 import io.sentry.event.EventBuilder;
 import io.sentry.event.interfaces.ExceptionInterface;
@@ -441,7 +438,8 @@ public class Log
             return;
         }
         try {
-            fluency.emit(tag, eventTime(now), buildEvent(messageKey, message, e, attrs));
+            // Fluentd 0.12 doesn't support EventTime, so use a normal integer here
+            fluency.emit(tag, now.getEpochSecond(), buildEvent(messageKey, message, e, attrs));
         }
         catch (IOException ex) {
             logger.error("Failed to emit event to Fluentd", ex);
