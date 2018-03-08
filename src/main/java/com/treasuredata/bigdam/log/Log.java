@@ -398,7 +398,8 @@ public class Log
         return event;
     }
 
-    Instant getLastTimestamp()
+    // use this method only in testing
+    public Instant getLastTimestamp()
     {
         return lastTimestamp;
     }
