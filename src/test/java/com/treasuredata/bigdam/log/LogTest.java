@@ -202,6 +202,7 @@ public class LogTest
                 anyFluentdTimeStamp(),
                 eq(Attrs.of(
                         "message", "yay",
+                        "stime", log.getLastTimestamp().getNano(),
                         "errorClass", "java.lang.RuntimeException",
                         "error", message,
                         "key", "value",
@@ -246,20 +247,25 @@ public class LogTest
         Log log = new Log(LogTest.class);
 
         log.error("message 1");
+        int nano1 = log.getLastTimestamp().getNano();
         log.warn("message 2");
+        int nano2 = log.getLastTimestamp().getNano();
         log.info("message 3");
+        int nano3 = log.getLastTimestamp().getNano();
         log.debug("message 4");
+        int nano4 = log.getLastTimestamp().getNano();
         log.trace("message 5");
+        int nano5 = log.getLastTimestamp().getNano();
         verify(underlying).error("message 1");
         verify(underlying).warn("message 2");
         verify(underlying).info("message 3");
         verify(underlying).debug("message 4");
         verify(underlying).trace("message 5");
-        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 1")));
-        verify(fluency).emit(eq("bigdam.log.warn"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 2")));
-        verify(fluency).emit(eq("bigdam.log.info"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 3")));
-        verify(fluency).emit(eq("bigdam.log.debug"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 4")));
-        verify(fluency).emit(eq("bigdam.log.trace"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 5")));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 1", "stime", nano1)));
+        verify(fluency).emit(eq("bigdam.log.warn"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 2", "stime", nano2)));
+        verify(fluency).emit(eq("bigdam.log.info"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 3", "stime", nano3)));
+        verify(fluency).emit(eq("bigdam.log.debug"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 4", "stime", nano4)));
+        verify(fluency).emit(eq("bigdam.log.trace"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message 5", "stime", nano5)));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
@@ -277,8 +283,14 @@ public class LogTest
         Map<String, Object> attrs = ImmutableMap.of("k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2");
         log.error("message", attrs);
 
+        Map<String, Object> expected = ImmutableMap.<String, Object>builder()
+                .put("message", "message")
+                .put("stime", log.getLastTimestamp().getNano())
+                .putAll(attrs)
+                .build();
+
         verify(underlying).error("message {}", attrs);
-        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message", "k", "vvvvvvvvvvvvvv", "k1", "v1", "k2", "v2")));
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(expected));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -294,9 +306,16 @@ public class LogTest
         Log log = new Log(LogTest.class);
 
         log.error("message");
-        verify(underlying).error("message");
-        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message", "mykey", "myvalue", "myname", "tagomoris")));
 
+        Map<String, Object> expected = ImmutableMap.<String, Object>builder()
+                .put("message", "message")
+                .put("stime", log.getLastTimestamp().getNano())
+                .put("mykey", "myvalue")
+                .put("myname", "tagomoris")
+                .build();
+
+        verify(underlying).error("message");
+        verify(fluency).emit(eq("bigdam.log.error"), anyFluentdTimeStamp(), eq(expected));
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
 
@@ -316,6 +335,7 @@ public class LogTest
 
         Map<String, Object> expected = ImmutableMap.<String, Object>builder()
                 .put("message", "message")
+                .put("stime", log.getLastTimestamp().getNano())
                 .putAll(attrs)
                 .putAll(defaults)
                 .build();
@@ -375,6 +395,7 @@ public class LogTest
         expectedAttrs.put("n", null);
         Map<String, Object> expected = new HashMap<>();
         expected.put("message", "message");
+        expected.put("stime", log.getLastTimestamp().getNano());
         expected.putAll(expectedAttrs);
         expected.putAll(defaults);
 
@@ -396,7 +417,7 @@ public class LogTest
 
         log.error("message", ImmutableMap.of());
         verify(underlying).error(eq("message {}"), eq(ImmutableMap.of()));
-        verify(fluency).emit(eq("bigdam.test.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message")));
+        verify(fluency).emit(eq("bigdam.test.log.error"), anyFluentdTimeStamp(), eq(ImmutableMap.of("message", "message", "stime", log.getLastTimestamp().getNano())));
 
         verify(sentry, never()).sendEvent(any(EventBuilder.class));
     }
@@ -421,6 +442,7 @@ public class LogTest
         Map<String, Object> expectedAttrs = ImmutableMap.of("k", "vvvv");
         Map<String, Object> expected = ImmutableMap.<String, Object>builder()
                 .put("message", "message")
+                .put("stime", log.getLastTimestamp().getNano())
                 .put("mykey", "myvalue")
                 .put("myname", "tagomoris")
                 .putAll(expectedAttrs)
