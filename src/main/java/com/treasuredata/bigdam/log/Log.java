@@ -44,6 +44,8 @@ public class Log
     private static final int SENTRY_LEVEL_THRESHOLD_DEBUG = 1;
     private static final int SENTRY_LEVEL_THRESHOLD_TRACE = 0;
 
+    private static final String SUBSECOND_TIME_FIELD = "stime";
+
     private static Function<Class<?>, Logger> loggerGetter = Log::defaultLoggerGetter;
 
     private static Map<String, ? extends Object> defaultAttributes = ImmutableMap.of();
@@ -64,6 +66,8 @@ public class Log
 
     private final Class<?> clazz;
     private Logger logger;
+
+    private Instant lastTimestamp;
 
     public static Level getLevel(final String str)
     {
@@ -394,12 +398,20 @@ public class Log
         return event;
     }
 
-    private Map<String, Object> buildEvent(final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    Instant getLastTimestamp()
     {
+        return lastTimestamp;
+    }
+
+    private Map<String, Object> buildEvent(final Instant now, final String messageKey, final String message, final Throwable e, final Map<String, ? extends Object> attrs)
+    {
+        // lastTimestamp is only for testing
+        lastTimestamp = now;
         // buildEvent doesn't modify "attrs", but construct another Map object.
         // Original attrs is used for many purposes (dump it on local log, send it to Fluentd and/or Sentry),
         // so we should not modify it.
         Map<String, Object> event = new HashMap<>();
+        event.put(SUBSECOND_TIME_FIELD, now.getNano());
         if (messageKey != null) {
             event.put(messageKey, message);
         }
@@ -439,7 +451,7 @@ public class Log
         }
         try {
             // Fluentd 0.12 doesn't support EventTime, so use a normal integer here
-            fluency.emit(tag, now.getEpochSecond(), buildEvent(messageKey, message, e, attrs));
+            fluency.emit(tag, now.getEpochSecond(), buildEvent(now, messageKey, message, e, attrs));
         }
         catch (IOException ex) {
             logger.error("Failed to emit event to Fluentd", ex);
