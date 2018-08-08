@@ -37,12 +37,12 @@ public class Log
     private static final String DEFAULT_DEBUG_TAG = "bigdam.log.debug";
     private static final String DEFAULT_TRACE_TAG = "bigdam.log.trace";
 
-    private static final int REMOTE_LEVEL_THRESHOLD_NEVER = 5;
-    private static final int REMOTE_LEVEL_THRESHOLD_ERROR = 4;
-    private static final int REMOTE_LEVEL_THRESHOLD_WARN = 3;
-    private static final int REMOTE_LEVEL_THRESHOLD_INFO = 2;
-    private static final int REMOTE_LEVEL_THRESHOLD_DEBUG = 1;
-    private static final int REMOTE_LEVEL_THRESHOLD_TRACE = 0;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_NEVER = 5;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_ERROR = 4;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_WARN = 3;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_INFO = 2;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_DEBUG = 1;
+    private static final int LOG_SERVICE_LEVEL_THRESHOLD_TRACE = 0;
 
     private static final String SUBSECOND_TIME_FIELD = "stime";
 
@@ -54,10 +54,10 @@ public class Log
     private static int maskedValueLength = 8;
 
     private static SentryClient sentry = null;
-    private static int sentryLevel = REMOTE_LEVEL_THRESHOLD_NEVER;
+    private static int sentryLevel = LOG_SERVICE_LEVEL_THRESHOLD_NEVER;
 
     private static Fluency fluency = null;
-    private static int fluentdLevel = REMOTE_LEVEL_THRESHOLD_NEVER;
+    private static int fluentdLevel = LOG_SERVICE_LEVEL_THRESHOLD_NEVER;
 
     private static String errorTag = DEFAULT_ERROR_TAG;
     private static String warnTag = DEFAULT_WARN_TAG;
@@ -93,21 +93,21 @@ public class Log
 
     public static int getRemoteLevel(final String threshold)
     {
-        int level = REMOTE_LEVEL_THRESHOLD_NEVER;
+        int level = LOG_SERVICE_LEVEL_THRESHOLD_NEVER;
         if (threshold.equals("error")) {
-            level = REMOTE_LEVEL_THRESHOLD_ERROR;
+            level = LOG_SERVICE_LEVEL_THRESHOLD_ERROR;
         }
         else if (threshold.equals("warn")) {
-            level = REMOTE_LEVEL_THRESHOLD_WARN;
+            level = LOG_SERVICE_LEVEL_THRESHOLD_WARN;
         }
         else if (threshold.equals("info")) {
-            level = REMOTE_LEVEL_THRESHOLD_INFO;
+            level = LOG_SERVICE_LEVEL_THRESHOLD_INFO;
         }
         else if (threshold.equals("debug")) {
-            level = REMOTE_LEVEL_THRESHOLD_DEBUG;
+            level = LOG_SERVICE_LEVEL_THRESHOLD_DEBUG;
         }
         else if (threshold.equals("trace")) {
-            level = REMOTE_LEVEL_THRESHOLD_TRACE;
+            level = LOG_SERVICE_LEVEL_THRESHOLD_TRACE;
         }
         else {
             throw new IllegalArgumentException("Invalid log level for Fluentd/Sentry log level:" + threshold);
@@ -485,7 +485,7 @@ public class Log
     public void error(final String message)
     {
         logger.error(message);
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_ERROR)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_ERROR)) {
             sendEvent(errorTag, message, null);
         }
     }
@@ -493,7 +493,7 @@ public class Log
     public void error(final String message, final Map<String, ? extends Object> attrs)
     {
         logger.error(message + " {}", filterAttrs(attrs));
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_ERROR)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_ERROR)) {
             sendEvent(errorTag, message, attrs);
         }
     }
@@ -511,10 +511,10 @@ public class Log
         else {
             logger.error(message + " {}", filterAttrs(attrs), e);
         }
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_ERROR)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_ERROR)) {
             sendEvent(errorTag, message, e, attrs);
         }
-        if (isEnabled(sentryLevel, REMOTE_LEVEL_THRESHOLD_ERROR)) {
+        if (isEnabled(sentryLevel, LOG_SERVICE_LEVEL_THRESHOLD_ERROR)) {
             sendException(e, attrs);
         }
     }
@@ -522,7 +522,7 @@ public class Log
     public void warn(final String message)
     {
         logger.warn(message);
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_WARN)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_WARN)) {
             sendEvent(warnTag, message, null);
         }
     }
@@ -530,7 +530,7 @@ public class Log
     public void warn(final String message, final Map<String, ? extends Object> attrs)
     {
         logger.warn(message + " {}", filterAttrs(attrs));
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_WARN)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_WARN)) {
             sendEvent(warnTag, message, attrs);
         }
     }
@@ -548,10 +548,10 @@ public class Log
         else {
             logger.warn(message + " {}", filterAttrs(attrs), e);
         }
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_WARN)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_WARN)) {
             sendEvent(warnTag, message, e, attrs);
         }
-        if (isEnabled(sentryLevel, REMOTE_LEVEL_THRESHOLD_WARN)) {
+        if (isEnabled(sentryLevel, LOG_SERVICE_LEVEL_THRESHOLD_WARN)) {
             sendException(e, attrs);
         }
     }
@@ -559,7 +559,7 @@ public class Log
     public void info(final String message)
     {
         logger.info(message);
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_INFO)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_INFO)) {
             sendEvent(infoTag, message, null);
         }
     }
@@ -567,7 +567,7 @@ public class Log
     public void info(final String message, final Map<String, ? extends Object> attrs)
     {
         logger.info(message + " {}", filterAttrs(attrs));
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_INFO)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_INFO)) {
             sendEvent(infoTag, message, attrs);
         }
     }
@@ -585,10 +585,10 @@ public class Log
         else {
             logger.info(message + " {}", filterAttrs(attrs), e);
         }
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_INFO)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_INFO)) {
             sendEvent(infoTag, message, e, attrs);
         }
-        if (isEnabled(sentryLevel, REMOTE_LEVEL_THRESHOLD_INFO)) {
+        if (isEnabled(sentryLevel, LOG_SERVICE_LEVEL_THRESHOLD_INFO)) {
             sendException(e, attrs);
         }
     }
@@ -596,7 +596,7 @@ public class Log
     public void debug(final String message)
     {
         logger.debug(message);
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_DEBUG)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_DEBUG)) {
             sendEvent(debugTag, message, null);
         }
     }
@@ -604,7 +604,7 @@ public class Log
     public void debug(final String message, final Map<String, ? extends Object> attrs)
     {
         logger.debug(message + " {}", filterAttrs(attrs));
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_DEBUG)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_DEBUG)) {
             sendEvent(debugTag, message, attrs);
         }
     }
@@ -622,10 +622,10 @@ public class Log
         else {
             logger.debug(message + " {}", filterAttrs(attrs), e);
         }
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_DEBUG)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_DEBUG)) {
             sendEvent(debugTag, message, e, attrs);
         }
-        if (isEnabled(sentryLevel, REMOTE_LEVEL_THRESHOLD_DEBUG)) {
+        if (isEnabled(sentryLevel, LOG_SERVICE_LEVEL_THRESHOLD_DEBUG)) {
             sendException(e, attrs);
         }
     }
@@ -633,7 +633,7 @@ public class Log
     public void trace(final String message)
     {
         logger.trace(message);
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_TRACE)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_TRACE)) {
             sendEvent(traceTag, message, null);
         }
     }
@@ -641,7 +641,7 @@ public class Log
     public void trace(final String message, final Map<String, ? extends Object> attrs)
     {
         logger.trace(message + " {}", filterAttrs(attrs));
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_TRACE)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_TRACE)) {
             sendEvent(traceTag, message, attrs);
         }
     }
@@ -659,10 +659,10 @@ public class Log
         else {
             logger.trace(message + " {}", filterAttrs(attrs), e);
         }
-        if (isEnabled(fluentdLevel, REMOTE_LEVEL_THRESHOLD_TRACE)) {
+        if (isEnabled(fluentdLevel, LOG_SERVICE_LEVEL_THRESHOLD_TRACE)) {
             sendEvent(traceTag, message, e, attrs);
         }
-        if (isEnabled(sentryLevel, REMOTE_LEVEL_THRESHOLD_TRACE)) {
+        if (isEnabled(sentryLevel, LOG_SERVICE_LEVEL_THRESHOLD_TRACE)) {
             sendException(e, attrs);
         }
     }
